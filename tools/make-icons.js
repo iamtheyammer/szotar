@@ -50,7 +50,7 @@ const WORD_CSS = `line-height:1;font-size:${WORD_SIZE}px;letter-spacing:-.008em;
 const ACC_SIZE = 320;
 const ACC_CSS = `line-height:0;font-size:${ACC_SIZE}px;` +
   'font-variation-settings:"opsz" 12,"wght" 600';
-const ACC_GAP = 73;    // between the two accents' ink
+const ACC_GAP = 10;    // between the two accents' ink — a hair, like a double acute
 const ACC_ABOVE = 44;  // from the top of the word's ink to the accents
 const GROUP_CY = 264;  // centre of accents + word together
 
