@@ -254,6 +254,7 @@
   .spinner{width:16px;height:16px;border:2px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .lemma-note{margin-top:14px;font-family:var(--sans);font-size:13.5px;color:var(--muted)}
+  .case-note{margin-top:12px;font-family:var(--sans);font-size:13px;color:var(--faint);font-style:italic}
   .lemma-note button{font-family:var(--serif);font-size:16px;color:var(--ink-hu);background:none;border:0;
     border-bottom:1px solid var(--accent-soft);cursor:pointer;padding:0}
   .lemma-note button:hover{border-bottom-color:var(--ink-hu)}
@@ -594,6 +595,24 @@ function parseRenderedExtras(html){
   return out;
 }
 
+// Everything one lookup needs, fetched together.
+function fetchWord(word){
+  return Promise.all([
+    Provider.define(word),
+    Provider.wikitext(word).catch(()=>null),
+    Provider.pageHtml(word).catch(()=>null)
+  ]).then(([def, wt, rhtml])=>({def, wt, rhtml}));
+}
+
+// Does this definition payload actually give us something to show? With a fixed
+// search direction the word must exist in that specific language — we don't
+// silently fall back to showing it in the other one.
+function hasUsableEntry(def, forceLang){
+  if(!def || Object.keys(def).length===0) return false;
+  if(forceLang) return !!(def[forceLang] && def[forceLang].length);
+  return true;
+}
+
 /* ============================================================================
    APP  —  state, routing, rendering
    ============================================================================ */
@@ -625,30 +644,38 @@ const App = {
     const my = ++this.reqId;
     renderLoading(word);
 
-    let def, wt, rhtml;
-    try{
-      [def, wt, rhtml] = await Promise.all([
-        Provider.define(word),
-        Provider.wikitext(word).catch(()=>null),
-        Provider.pageHtml(word).catch(()=>null)
-      ]);
-    }catch(e){
-      if(my===this.reqId) renderError(word, e);
-      return;
-    }
-    if(my !== this.reqId) return;   // a newer lookup superseded this one
+    // Wiktionary's mainspace is case-sensitive — "Ház" and "ház" are different
+    // pages, and a capitalised query (start of a sentence, a proper-noun guess)
+    // often has no page of its own. Try exactly what was asked for first, then
+    // fall back to the lowercased form.
+    const lower = word.toLowerCase();
+    const candidates = lower !== word ? [word, lower] : [word];
 
-    if(!def || Object.keys(def).length===0){ renderNotFound(word); return; }
-    // A fixed search direction means the word must exist in that specific
-    // language — don't silently fall back to showing it in the other one.
-    if(this.forceLang && !(def[this.forceLang] && def[this.forceLang].length)){
-      renderNotFound(word); return;
+    let hit = null, resolved = word;
+    for(const cand of candidates){
+      let r;
+      try{
+        r = await fetchWord(cand);
+      }catch(e){
+        if(my===this.reqId) renderError(word, e);
+        return;
+      }
+      if(my !== this.reqId) return;   // a newer lookup superseded this one
+      if(hasUsableEntry(r.def, this.forceLang)){ hit = r; resolved = cand; break; }
+    }
+    if(!hit){ renderNotFound(word); return; }
+
+    // Re-point the UI at the headword we actually found.
+    const fellBack = resolved !== word;
+    if(fellBack){
+      document.getElementById("q").value = resolved;
+      if(this.stack.length) this.stack[this.stack.length-1] = resolved;
     }
 
-    const parsed = parseWikitext(wt);
-    const extras = parseRenderedExtras(rhtml);
-    pushHist(word, chooseLang(def));
-    renderEntry(word, def, parsed, extras);
+    const parsed = parseWikitext(hit.wt);
+    const extras = parseRenderedExtras(hit.rhtml);
+    pushHist(resolved, chooseLang(hit.def));
+    renderEntry(resolved, hit.def, parsed, extras, fellBack ? word : null);
   }
 };
 
@@ -737,7 +764,7 @@ function renderCrumbs(mount){
 }
 
 /* ------------------------------------------------------------- render: entry */
-function renderEntry(word, def, parsed, extras){
+function renderEntry(word, def, parsed, extras, fallbackFrom){
   const primary = chooseLang(def);
   setAccent(primary);
   const s = document.getElementById("stage");
@@ -794,6 +821,12 @@ function renderEntry(word, def, parsed, extras){
   actions.append(favBtn, wikiLink);
   hrow.appendChild(actions);
   body.appendChild(hrow);
+
+  if(fallbackFrom){
+    const note = el("div","case-note");
+    note.textContent = "No entry for “"+fallbackFrom+"” — showing “"+word+"”.";
+    body.appendChild(note);
+  }
 
   const lemma = primary==="hu" ? detectLemma(def.hu) : null;
   if(lemma && lemma.toLowerCase()!==word.toLowerCase()){
@@ -920,8 +953,8 @@ async function renderNotFound(word){
   s.className="entry-wrap fade-in"; s.innerHTML="";
   renderCrumbs(s);
   const n = el("div","notice");
-  n.appendChild(el("h3", "No entry for “"+word+"”."));
-  n.appendChild(el("p","Hungarian is agglutinative, so inflected forms (pályaudvarban, jönnék) often aren’t headwords. Try the base form, or pick a suggestion:"));
+  n.appendChild(el("h3", null, "No entry for “"+word+"”."));
+  n.appendChild(el("p", null, "Hungarian is agglutinative, so inflected forms (pályaudvarban, jönnék) often aren’t headwords. Try the base form, or pick a suggestion:"));
   const dy = el("div","did-you");
   n.appendChild(dy); s.appendChild(n);
   try{
@@ -938,8 +971,8 @@ function renderError(word, e){
   s.className="entry-wrap"; s.innerHTML="";
   renderCrumbs(s);
   const n = el("div","notice");
-  n.appendChild(el("h3","Couldn’t reach Wiktionary."));
-  n.appendChild(el("p", "The lookup for “"+word+"” failed. Check your connection and try again. If you’re running this inside a sandbox that blocks external requests, open the file directly in your browser instead."));
+  n.appendChild(el("h3", null, "Couldn’t reach Wiktionary."));
+  n.appendChild(el("p", null, "The lookup for “"+word+"” failed. Check your connection and try again. If you’re running this inside a sandbox that blocks external requests, open the file directly in your browser instead."));
   const b = el("button","retry-btn","Retry"); b.onclick=()=>App.lookup(word);
   n.appendChild(b); s.appendChild(n);
   console.error(e);
