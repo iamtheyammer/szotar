@@ -68,11 +68,24 @@
   .search-field{display:flex;align-items:center;gap:10px;background:var(--card);
     border:1px solid var(--rule);border-radius:2px;padding:10px 14px;transition:border-color .15s,box-shadow .15s}
   .search-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search-field.dir-hu{border-color:var(--ink-hu)}
+  .search-field.dir-hu:focus-within{border-color:var(--ink-hu);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--ink-hu) 12%, transparent)}
+  .search-field.dir-en{border-color:var(--ink-en)}
+  .search-field.dir-en:focus-within{border-color:var(--ink-en);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--ink-en) 12%, transparent)}
   .search-field svg{flex:0 0 auto;color:var(--muted)}
   #q{border:0;outline:0;background:transparent;font-family:var(--serif);font-size:19px;color:var(--ink);width:100%}
   #q::placeholder{color:var(--faint);font-style:italic}
   .dir-badge{flex:0 0 auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);
-    border:1px solid var(--rule);border-radius:2px;padding:3px 6px;white-space:nowrap}
+    border:1px solid var(--rule);border-radius:2px;padding:3px 6px;white-space:nowrap;
+    background:none;cursor:pointer;transition:color .12s,border-color .12s,background .12s}
+  .dir-badge:hover{border-color:var(--accent);color:var(--accent)}
+  .dir-badge.active{color:#fff}
+  .dir-badge.active.hu{background:var(--ink-hu);border-color:var(--ink-hu)}
+  .dir-badge.active.en{background:var(--ink-en);border-color:var(--ink-en)}
+  .dir-badge.active.hu:hover{border-color:var(--ink-hu);color:#fff}
+  .dir-badge.active.en:hover{border-color:var(--ink-en);color:#fff}
 
   .suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--card);
     border:1px solid var(--rule);border-radius:2px;box-shadow:0 12px 30px rgba(25,31,28,.10);
@@ -107,6 +120,14 @@
   .history .clear{margin-top:14px;font-family:var(--sans);font-size:12px;color:var(--faint);
     background:none;border:0;cursor:pointer;padding:0}
   .history .clear:hover{color:var(--ink-hu);text-decoration:underline}
+  .fav-section{margin-bottom:28px}
+  .history li.fav-item{display:flex;align-items:center;gap:2px}
+  .history li.fav-item button:first-child{width:auto;flex:1 1 0%;min-width:0;overflow:hidden}
+  .history li.fav-item button:first-child span.lang{margin-right:8px}
+  .fav-word-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .history .fav-remove{width:auto;flex:0 0 auto;background:none;border:0;cursor:pointer;color:var(--faint);
+    font-size:14px;line-height:1;padding:2px 2px}
+  .fav-remove:hover{color:var(--ink-hu)}
 
   /* ---------- empty / hero state ---------- */
   .hero{grid-column:1/-1;text-align:center;padding:8vh 0 6vh}
@@ -152,8 +173,13 @@
   .ipa{font-family:var(--mono);font-size:16px;color:var(--muted)}
   .lang-name{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
   .wiki-link{font-family:var(--sans);font-size:12.5px;color:var(--muted);text-decoration:none;
-    border-bottom:1px solid var(--rule);margin-left:auto}
+    border-bottom:1px solid var(--rule)}
   .wiki-link:hover{color:var(--accent);border-bottom-color:var(--accent)}
+  .hrow-actions{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .fav-btn{font-size:19px;line-height:1;background:none;border:0;cursor:pointer;color:var(--faint);
+    padding:0;transition:color .12s,transform .1s}
+  .fav-btn:hover{color:var(--accent);transform:scale(1.08)}
+  .fav-btn.on{color:var(--accent)}
 
   .pos-block{margin-top:30px}
   .pos-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--rule);padding-bottom:8px;margin-bottom:16px}
@@ -180,19 +206,34 @@
   .examples-caption{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--faint);padding-left:14px;margin-bottom:2px}
 
-  /* translations panel (EN → HU) */
-  details.panel{margin-bottom:26px;border-bottom:1px solid var(--rule);padding-bottom:6px}
+  /* translations / possessive / conjugation panels */
   details.panel>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
     padding:12px 0;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   details.panel>summary::-webkit-details-marker{display:none}
   details.panel .tri{transition:transform .2s;color:var(--faint)}
   details.panel[open]>summary .tri{transform:rotate(90deg)}
+  details.panel.panel-lead{margin-bottom:26px;border-bottom:1px solid var(--rule);padding-bottom:6px}
+  details.panel.panel-trail{margin-top:26px;border-top:1px solid var(--rule);padding-top:6px}
   .trans-group{margin:2px 0 16px;text-align:center}
   .trans-group .g-gloss{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--muted);margin-bottom:6px}
   .trans-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
   .chip{font-family:var(--serif);font-size:17px;background:none;border:1px solid var(--ink-hu);color:var(--ink-hu);
     border-radius:2px;padding:5px 11px;cursor:pointer;transition:background .12s,color .12s}
   .chip:hover{background:var(--ink-hu);color:#fff}
+
+  /* per-sense synonyms (always visible) */
+  .syn-row{margin:6px 0 0;font-family:var(--sans);font-size:13px;color:var(--muted)}
+  .syn-row .syn-label{text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;color:var(--faint);margin-right:6px}
+
+  /* embedded Wiktionary inflection tables (possessive forms, conjugation) */
+  .mw-parser-output{
+    --wikt-palette-paleblue:#eef2ee; --wikt-palette-grey:var(--rule); --wikt-palette-grey-6:var(--rule);
+    --wikt-palette-grey-9:var(--muted); --wikt-palette-white:var(--card); --wikt-palette-lightergrey:var(--rule-soft);
+    --wikt-palette-green-0:#eef4ee; --wikt-palette-green-1:#e3ede3; --wikt-palette-green-2:#d3e4d3;
+    --wikt-palette-green-4:#bcd8bc; --wikt-palette-grey-green-1:var(--rule-soft);
+    font-family:var(--sans); font-size:13.5px; color:var(--ink); overflow-x:auto;
+  }
+  .mw-parser-output caption{font-family:var(--serif);font-style:italic;text-align:left!important}
 
   /* click-to-define targets inside rendered content */
   .cd{cursor:pointer;color:inherit;background:none;border:0;padding:0;font:inherit;
@@ -245,7 +286,7 @@
         <input id="q" type="text" autocomplete="off" spellcheck="false"
           placeholder="Keress egy szót…  ·  look up a word…"
           aria-label="Search a word in English or Hungarian">
-        <span class="dir-badge" id="dirBadge">auto</span>
+        <button type="button" class="dir-badge" id="dirBadge">EN ↔ HU</button>
       </div>
       <div class="suggest" id="suggest" role="listbox"></div>
     </div>
@@ -255,9 +296,15 @@
 <main>
   <div class="wrap">
     <aside class="history">
-      <h2>Előzmények · History</h2>
-      <ol id="historyList"><li class="empty">No lookups yet.</li></ol>
-      <button class="clear" id="clearHist" style="display:none">clear history</button>
+      <div class="fav-section">
+        <h2>Kedvencek · Favorites</h2>
+        <ol id="favList"><li class="empty">No favorites yet.</li></ol>
+      </div>
+      <div class="hist-section">
+        <h2>Előzmények · History</h2>
+        <ol id="historyList"><li class="empty">No lookups yet.</li></ol>
+        <button class="clear" id="clearHist" style="display:none">clear history</button>
+      </div>
     </aside>
 
     <div class="entry-wrap" id="stage"><!-- hero / results render here --></div>
@@ -291,8 +338,22 @@ const LiveWiktionaryProvider = {
     return r.json();  // { "hu":[...], "en":[...], ... }
   },
 
-  // Autocomplete. Returns array of {title}.
-  async suggest(prefix){
+  // Autocomplete. Returns array of {title}. When `lang` is "hu" or "en", results
+  // are restricted to headwords actually categorized in that language (so a fixed
+  // search direction doesn't surface suggestions from the other language).
+  async suggest(prefix, lang){
+    if(lang==="hu" || lang==="en"){
+      const cat = lang==="hu" ? "Hungarian lemmas" : "English lemmas";
+      const safe = prefix.replace(/["*]/g,"");
+      const p = new URLSearchParams({action:"query",list:"search",
+        srsearch:`intitle:${safe}* incategory:"${cat}"`,
+        srlimit:"8",srnamespace:"0",format:"json",origin:"*"});
+      const r = await fetch(`${this.BASE}/w/api.php?`+p);
+      if(!r.ok) return [];
+      const data = await r.json();
+      const results = (data && data.query && data.query.search) || [];
+      return results.map(x=>({title:x.title}));
+    }
     const p = new URLSearchParams({action:"opensearch",search:prefix,limit:"8",
       namespace:"0",format:"json",origin:"*"});
     const r = await fetch(`${this.BASE}/w/api.php?`+p);
@@ -310,12 +371,25 @@ const LiveWiktionaryProvider = {
     if(!r.ok) return null;
     const j = await r.json();
     return (j && j.parse && j.parse.wikitext) ? j.parse.wikitext["*"] : null;
+  },
+
+  // Rendered page HTML — used to pull synonym lines and the Declension/Conjugation
+  // tables, since those are template-expanded and don't exist in raw wikitext.
+  async pageHtml(word){
+    const p = new URLSearchParams({action:"parse",page:word,prop:"text",
+      redirects:"1",format:"json",origin:"*"});
+    const r = await fetch(`${this.BASE}/w/api.php?`+p);
+    if(!r.ok) return null;
+    const j = await r.json();
+    return (j && j.parse && j.parse.text) ? j.parse.text["*"] : null;
   }
 };
 const Provider = LiveWiktionaryProvider;   // <-- swap here for a v2 local dataset
 
 /* ------------------------------------------------------------------ helpers */
 const HU_DIACRITICS = /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/;
+const DIR_ORDER = ["auto","hu","en"];
+const DIR_LABEL = {auto:"EN ↔ HU", hu:"HU → EN", en:"EN → HU"};
 const POS_HU = {  // English POS -> Hungarian abbreviation (learner aid)
   "Noun":"fn", "Proper noun":"tul", "Verb":"ige", "Adjective":"mn",
   "Adverb":"hsz", "Numeral":"szn", "Pronoun":"nm", "Conjunction":"ksz",
@@ -448,12 +522,86 @@ function detectLemma(langBlocks){
   return null;
 }
 
+// Clone a node out of the Parsoid HTML doc into ours, stripping embedded
+// stylesheets/edit-section links and turning its wikilinks into click-to-define buttons.
+function sanitizeWikiFragment(node){
+  const clone = document.importNode(node, true);
+  clone.querySelectorAll("style,link,.mw-editsection").forEach(e=>e.remove());
+  clone.querySelectorAll("a[href]").forEach(a=>{
+    const word = titleFromHref(a.getAttribute("href"));
+    if(word){
+      const btn = document.createElement("button");
+      btn.className = "cd wl";
+      btn.textContent = a.textContent;
+      btn.dataset.word = word;
+      a.replaceWith(btn);
+    }
+  });
+  return clone;
+}
+
+/* Extract from the fully-rendered page HTML (Parsoid can't give us these —
+   they're template-expanded): per-sense synonym lists, the Hungarian
+   possessive-forms table, and the Hungarian conjugation table(s).            */
+function parseRenderedExtras(html){
+  const out = { hu:{synByPos:{}, possessive:null, conjugation:[], styleCSS:""}, en:{synByPos:{}} };
+  if(!html) return out;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const styleEl = doc.querySelector("style[data-mw-deduplicate]");
+  if(styleEl) out.hu.styleCSS = styleEl.textContent;
+
+  const root = doc.querySelector(".mw-parser-output") || doc.body;
+  let curLang=null, curPOS=null, curSub=null;
+  Array.from(root.children).forEach(node=>{
+    const cls = node.classList;
+    if(cls.contains("mw-heading2")){
+      const h = node.querySelector("h2");
+      const t = h ? h.textContent.trim() : "";
+      curLang = t==="Hungarian" ? "hu" : t==="English" ? "en" : null;
+      curPOS=null; curSub=null; return;
+    }
+    if(!curLang) return;
+    if(cls.contains("mw-heading3")||cls.contains("mw-heading4")||cls.contains("mw-heading5")){
+      const h = node.querySelector("h3,h4,h5");
+      const t = h ? h.textContent.trim() : "";
+      if(POS_HU.hasOwnProperty(t)){
+        curPOS=t; curSub=null;
+        if(!out[curLang].synByPos[t]) out[curLang].synByPos[t]=[];
+      } else if(t==="Declension" || t==="Conjugation"){
+        curSub=t;
+      } else { curSub=null; }
+      return;
+    }
+    if(curPOS && !curSub && node.tagName==="OL"){
+      out[curLang].synByPos[curPOS] = Array.from(node.children).map(li=>{
+        const words=[];
+        li.querySelectorAll(":scope > dl > dd > span.nyms.synonym a").forEach(a=>{
+          const w=a.textContent.trim(); if(w) words.push(w);
+        });
+        return words;
+      });
+      return;
+    }
+    if(curLang==="hu" && curSub==="Declension" && cls.contains("inflection-table-wrapper")){
+      const cap = node.querySelector("caption");
+      if(cap && /possessive forms/i.test(cap.textContent)) out.hu.possessive = sanitizeWikiFragment(node);
+      return;
+    }
+    if(curLang==="hu" && curSub==="Conjugation" && cls.contains("inflection-table-wrapper")){
+      out.hu.conjugation.push(sanitizeWikiFragment(node));
+    }
+  });
+  return out;
+}
+
 /* ============================================================================
    APP  —  state, routing, rendering
    ============================================================================ */
 const App = {
   stack: [],
   history: loadHist(),
+  favorites: loadFav(),
+  dir: loadDir(),   // "auto" | "hu" | "en" — fixed search direction, remembered
   reqId: 0,
   forceLang: null,
 
@@ -477,11 +625,12 @@ const App = {
     const my = ++this.reqId;
     renderLoading(word);
 
-    let def, wt;
+    let def, wt, rhtml;
     try{
-      [def, wt] = await Promise.all([
+      [def, wt, rhtml] = await Promise.all([
         Provider.define(word),
-        Provider.wikitext(word).catch(()=>null)
+        Provider.wikitext(word).catch(()=>null),
+        Provider.pageHtml(word).catch(()=>null)
       ]);
     }catch(e){
       if(my===this.reqId) renderError(word, e);
@@ -490,10 +639,16 @@ const App = {
     if(my !== this.reqId) return;   // a newer lookup superseded this one
 
     if(!def || Object.keys(def).length===0){ renderNotFound(word); return; }
+    // A fixed search direction means the word must exist in that specific
+    // language — don't silently fall back to showing it in the other one.
+    if(this.forceLang && !(def[this.forceLang] && def[this.forceLang].length)){
+      renderNotFound(word); return;
+    }
 
     const parsed = parseWikitext(wt);
+    const extras = parseRenderedExtras(rhtml);
     pushHist(word, chooseLang(def));
-    renderEntry(word, def, parsed);
+    renderEntry(word, def, parsed, extras);
   }
 };
 
@@ -514,8 +669,27 @@ function chooseLang(def){
 function setAccent(lang){
   document.documentElement.style.setProperty("--accent",
     lang==="en" ? "var(--ink-en)" : "var(--ink-hu)");
-  document.getElementById("dirBadge").textContent =
-    lang==="hu" ? "HU → EN" : lang==="en" ? "EN → HU" : "auto";
+}
+
+/* -------------------------------------------------------------- dir toggle */
+function loadDir(){
+  try{
+    const v = localStorage.getItem("szotar.dir");
+    return DIR_ORDER.includes(v) ? v : "auto";
+  }catch(e){ return "auto"; }
+}
+function saveDir(){ try{ localStorage.setItem("szotar.dir", App.dir); }catch(e){} }
+function renderDirBadge(){
+  const b = document.getElementById("dirBadge");
+  b.textContent = DIR_LABEL[App.dir];
+  b.classList.toggle("active", App.dir!=="auto");
+  b.classList.toggle("hu", App.dir==="hu");
+  b.classList.toggle("en", App.dir==="en");
+  b.setAttribute("aria-label", "Search direction: "+DIR_LABEL[App.dir]+". Click to change.");
+  b.title = "Click to change search direction";
+  const field = document.querySelector(".search-field");
+  field.classList.toggle("dir-hu", App.dir==="hu");
+  field.classList.toggle("dir-en", App.dir==="en");
 }
 
 /* ------------------------------------------------------------- render: hero */
@@ -563,7 +737,7 @@ function renderCrumbs(mount){
 }
 
 /* ------------------------------------------------------------- render: entry */
-function renderEntry(word, def, parsed){
+function renderEntry(word, def, parsed, extras){
   const primary = chooseLang(def);
   setAccent(primary);
   const s = document.getElementById("stage");
@@ -572,7 +746,8 @@ function renderEntry(word, def, parsed){
 
   const langs = Object.keys(def).filter(l=>def[l]&&def[l].length);
   const ordered = [primary, ...langs.filter(l=>l!==primary)];
-  const relevant = ordered.filter(l=>l==="hu"||l==="en");
+  let relevant = ordered.filter(l=>l==="hu"||l==="en");
+  if(App.dir!=="auto") relevant = relevant.filter(l=>l===App.dir);
   const shown = relevant.length?relevant:[primary];
 
   const card = el("div","entry");
@@ -602,7 +777,22 @@ function renderEntry(word, def, parsed){
   wikiLink.className = "wiki-link"; wikiLink.target = "_blank"; wikiLink.rel = "noopener noreferrer";
   wikiLink.textContent = "Wiktionary ↗";
   wikiLink.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}#${primary==="hu"?"Hungarian":"English"}`;
-  hrow.appendChild(wikiLink);
+
+  const favBtn = document.createElement("button");
+  favBtn.type = "button"; favBtn.className = "fav-btn";
+  function paintFav(){
+    const on = isFavorited(word);
+    favBtn.classList.toggle("on", on);
+    favBtn.textContent = on ? "★" : "☆";
+    const label = on ? "Remove from favorites" : "Add to favorites";
+    favBtn.setAttribute("aria-label", label); favBtn.title = label;
+  }
+  paintFav();
+  favBtn.onclick = ()=>{ toggleFavorite(word, primary); paintFav(); };
+
+  const actions = el("div","hrow-actions");
+  actions.append(favBtn, wikiLink);
+  hrow.appendChild(actions);
   body.appendChild(hrow);
 
   const lemma = primary==="hu" ? detectLemma(def.hu) : null;
@@ -616,7 +806,7 @@ function renderEntry(word, def, parsed){
   shown.forEach(l=>{
     const region = el("div","lang-region"); region.dataset.lang=l;
     if(l!==primary) region.style.display="none";
-    renderLangBlocks(region, def[l], l, parsed);
+    renderLangBlocks(region, def[l], l, parsed, extras[l]);
     body.appendChild(region);
   });
 
@@ -635,10 +825,12 @@ function renderEntry(word, def, parsed){
   s.appendChild(card);
 }
 
-// Translations panel first (when present), then part-of-speech blocks, senses, examples.
-function renderLangBlocks(mount, blocks, lang, parsed){
+// Translations panel first (when present), then part-of-speech blocks with
+// per-sense synonyms, then trailing possessive-forms/conjugation panels (hu only).
+function renderLangBlocks(mount, blocks, lang, parsed, extra){
+  extra = extra || {synByPos:{}};
   if(lang==="en" && parsed.trans && parsed.trans.length){
-    const det = document.createElement("details"); det.className="panel"; det.open=true;
+    const det = document.createElement("details"); det.className="panel panel-lead"; det.open=true;
     const sm = document.createElement("summary");
     sm.innerHTML = '<span class="tri">▸</span> Magyar megfelelők · Hungarian translations';
     det.appendChild(sm);
@@ -661,10 +853,22 @@ function renderLangBlocks(mount, blocks, lang, parsed){
     pb.appendChild(head);
 
     const ol = el("ol","senses");
-    (b.definitions||[]).forEach(d=>{
+    const synList = extra.synByPos[b.partOfSpeech] || [];
+    (b.definitions||[]).forEach((d,i)=>{
       if(!d.definition || !d.definition.trim()) return;
       const li = el("li");
       li.appendChild(renderDefinitionHTML(d.definition));
+      const syns = synList[i];
+      if(syns && syns.length){
+        const sr = el("div","syn-row");
+        sr.appendChild(el("span","syn-label", syns.length>1?"synonyms":"synonym"));
+        syns.forEach((w,k)=>{
+          if(k>0) sr.appendChild(document.createTextNode(", "));
+          const btn = el("button","cd wl",w); btn.dataset.word=w;
+          sr.appendChild(btn);
+        });
+        li.appendChild(sr);
+      }
       const exs = d.parsedExamples || (d.examples||[]).map(e=>({example:e}));
       if(exs && exs.length){
         const box = el("div","examples");
@@ -683,6 +887,25 @@ function renderLangBlocks(mount, blocks, lang, parsed){
     pb.appendChild(ol);
     mount.appendChild(pb);
   });
+
+  if(lang==="hu"){
+    if(extra.possessive) mount.appendChild(buildWikiTablePanel("Birtokos alakok · Possessive forms", extra.styleCSS, [extra.possessive]));
+    if(extra.conjugation && extra.conjugation.length) mount.appendChild(buildWikiTablePanel("Ragozás · Conjugation", extra.styleCSS, extra.conjugation));
+  }
+}
+
+// A collapsed-by-default panel embedding one or more sanitized Wiktionary
+// inflection tables, re-using Wiktionary's own (captured) table CSS.
+function buildWikiTablePanel(label, styleCSS, nodes){
+  const det = document.createElement("details"); det.className = "panel panel-trail wiki-embed";
+  const sm = document.createElement("summary");
+  sm.innerHTML = '<span class="tri">▸</span> '+label;
+  det.appendChild(sm);
+  const wrap = el("div","mw-parser-output");
+  if(styleCSS){ const st = document.createElement("style"); st.textContent = styleCSS; wrap.appendChild(st); }
+  nodes.forEach(n=>{ if(n) wrap.appendChild(n); });
+  det.appendChild(wrap);
+  return det;
 }
 
 // Inline HTML (examples) -> clickable tokens, reusing the definition renderer.
@@ -702,8 +925,9 @@ async function renderNotFound(word){
   const dy = el("div","did-you");
   n.appendChild(dy); s.appendChild(n);
   try{
-    const sug = await Provider.suggest(word);
-    if(sug.length){ sug.slice(0,8).forEach(o=>{ const b=el("button",null,o.title); b.onclick=()=>App.lookup(o.title); dy.appendChild(b); }); }
+    const sug = await Provider.suggest(word, App.dir!=="auto"?App.dir:undefined);
+    if(sug.length){ sug.slice(0,8).forEach(o=>{ const b=el("button",null,o.title);
+      b.onclick=()=>App.lookup(o.title, App.dir!=="auto"?{lang:App.dir}:undefined); dy.appendChild(b); }); }
     else dy.appendChild(el("p",null,"No close matches found."));
   }catch(e){ dy.appendChild(el("p",null,"Couldn’t reach suggestions.")); }
 }
@@ -745,6 +969,36 @@ function renderHistory(){
 }
 document.getElementById("clearHist").onclick=()=>{ App.history=[]; saveHist(); renderHistory(); };
 
+/* ------------------------------------------------------------------ favorites */
+function loadFav(){ try{ return JSON.parse(localStorage.getItem("szotar.fav")||"[]"); }catch(e){ return []; } }
+function saveFav(){ try{ localStorage.setItem("szotar.fav", JSON.stringify(App.favorites)); }catch(e){} }
+function isFavorited(word){
+  return App.favorites.some(f=>f.word.toLowerCase()===word.toLowerCase());
+}
+function toggleFavorite(word, lang){
+  const idx = App.favorites.findIndex(f=>f.word.toLowerCase()===word.toLowerCase());
+  if(idx>=0) App.favorites.splice(idx,1);
+  else App.favorites.unshift({word, lang: lang||"hu"});
+  saveFav(); renderFavorites();
+}
+function renderFavorites(){
+  const ol = document.getElementById("favList");
+  ol.innerHTML="";
+  if(!App.favorites.length){ ol.appendChild(el("li","empty","No favorites yet.")); return; }
+  App.favorites.forEach(f=>{
+    const li = el("li","fav-item");
+    const b = el("button");
+    const tag = el("span","lang "+(f.lang==="en"?"en":"hu"), f.lang==="en"?"EN":"HU");
+    const wordSpan = el("span","fav-word-text", f.word);
+    b.append(tag, wordSpan);
+    b.onclick=()=>App.lookup(f.word);
+    const rm = el("button","fav-remove","★");
+    rm.type="button"; rm.title="Remove from favorites"; rm.setAttribute("aria-label","Remove from favorites");
+    rm.onclick=(e)=>{ e.stopPropagation(); toggleFavorite(f.word); };
+    li.append(b, rm); ol.appendChild(li);
+  });
+}
+
 /* --------------------------------------------------------------- search box */
 const qInput = document.getElementById("q");
 const suggestBox = document.getElementById("suggest");
@@ -752,13 +1006,11 @@ let sugTimer=null, sugItems=[], sugActive=-1;
 
 qInput.addEventListener("input", ()=>{
   const v = qInput.value.trim();
-  document.getElementById("dirBadge").textContent =
-    !v ? "auto" : HU_DIACRITICS.test(v) ? "HU → EN" : "auto";
   clearTimeout(sugTimer);
   if(v.length<1){ closeSuggest(); return; }
   sugTimer = setTimeout(async ()=>{
     try{
-      const items = await Provider.suggest(v);
+      const items = await Provider.suggest(v, App.dir!=="auto"?App.dir:undefined);
       sugItems = items; sugActive=-1; paintSuggest();
     }catch(e){ closeSuggest(); }
   }, 130);
@@ -771,7 +1023,7 @@ function paintSuggest(){
     b.appendChild(el("span","term", it.title));
     b.appendChild(el("span","desc", HU_DIACRITICS.test(it.title)?"Hungarian?":""));
     if(i===sugActive) b.classList.add("active");
-    b.onmousedown=(e)=>{ e.preventDefault(); App.lookup(it.title); };
+    b.onmousedown=(e)=>{ e.preventDefault(); App.lookup(it.title, App.dir!=="auto"?{lang:App.dir}:undefined); };
     suggestBox.appendChild(b);
   });
   suggestBox.classList.add("open");
@@ -782,12 +1034,20 @@ qInput.addEventListener("keydown",(e)=>{
   if(suggestBox.classList.contains("open") && sugItems.length){
     if(e.key==="ArrowDown"){ e.preventDefault(); sugActive=(sugActive+1)%sugItems.length; paintSuggest(); return; }
     if(e.key==="ArrowUp"){ e.preventDefault(); sugActive=(sugActive-1+sugItems.length)%sugItems.length; paintSuggest(); return; }
-    if(e.key==="Enter" && sugActive>=0){ e.preventDefault(); App.lookup(sugItems[sugActive].title); return; }
+    if(e.key==="Enter" && sugActive>=0){ e.preventDefault(); App.lookup(sugItems[sugActive].title, App.dir!=="auto"?{lang:App.dir}:undefined); return; }
     if(e.key==="Escape"){ closeSuggest(); return; }
   }
-  if(e.key==="Enter"){ e.preventDefault(); if(qInput.value.trim()) App.lookup(qInput.value.trim()); }
+  if(e.key==="Enter"){ e.preventDefault(); if(qInput.value.trim()) App.lookup(qInput.value.trim(), App.dir!=="auto"?{lang:App.dir}:undefined); }
 });
 document.addEventListener("click",(e)=>{ if(!e.target.closest(".search")) closeSuggest(); });
+
+/* -------------------------------------------------------------- dir toggle */
+document.getElementById("dirBadge").addEventListener("click", ()=>{
+  const i = DIR_ORDER.indexOf(App.dir);
+  App.dir = DIR_ORDER[(i+1)%DIR_ORDER.length];
+  saveDir(); renderDirBadge(); closeSuggest();
+  if(App.stack.length) App.lookup(App.stack[App.stack.length-1], App.dir!=="auto"?{lang:App.dir}:undefined);
+});
 
 /* ----------------------------------------------- click-to-define delegation */
 document.getElementById("stage").addEventListener("click",(e)=>{
@@ -802,6 +1062,8 @@ document.addEventListener("keydown",(e)=>{
 
 /* ------------------------------------------------------------------- start */
 renderHistory();
+renderFavorites();
+renderDirBadge();
 (function initFromURL(){
   const params = new URLSearchParams(location.search);
   const enhu = params.get("enhu");   // English word -> Hungarian translations
