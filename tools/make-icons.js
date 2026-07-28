@@ -43,10 +43,16 @@ const EN = '#254a6e';  // prussian slate
 const WORD_SIZE = 268;
 const WORD_CSS = `line-height:1;font-size:${WORD_SIZE}px;letter-spacing:-.008em;` +
   'font-variation-settings:"opsz" 12,"wght" 600';
-const WORD_CY = 220;   // centre of the word's ink within the canvas
-const RULE_GAP = 62;   // from the baseline of the word to the rule
-const RULE_W = 104;    // per half
-const RULE_H = 8;
+
+// Two acutes ride above the word as a matched pair — same size, same height —
+// rather than as per-letter diacritics, which would stagger them and read as
+// a different language's spelling.
+const ACC_SIZE = 320;
+const ACC_CSS = `line-height:0;font-size:${ACC_SIZE}px;` +
+  'font-variation-settings:"opsz" 12,"wght" 600';
+const ACC_GAP = 73;    // between the two accents' ink
+const ACC_ABOVE = 44;  // from the top of the word's ink to the accents
+const GROUP_CY = 264;  // centre of accents + word together
 
 /* ---------- font ---------- */
 
@@ -258,27 +264,34 @@ function inkBox(font, text, css) {
 
 // `pad` shrinks the art toward the centre: Android maskable icons are cropped
 // to an inner circle, so their art has to stay inside the middle 80%.
-// Below ~48px the rule is thinner than a pixel and only muddies the letters,
-// so favicon sizes drop it and centre the word on its own.
-function iconPage(font, word, size, pad = 1) {
-  const rule = size >= 48;
+// Below ~48px the accents are barely a pixel of colour and only muddy the
+// letters, so favicon sizes drop them and centre the word on its own.
+function iconPage(font, word, acc, size, pad = 1) {
+  const accents = size >= 48;
+  const groupH = accents ? acc.h + ACC_ABOVE + word.h : word.h;
+  const top = (accents ? GROUP_CY : S / 2) - groupH / 2;
+
   const wx = S / 2 - word.cx;
-  const wy = (rule ? WORD_CY : S / 2) - word.cy;
-  const ruleTop = Math.round(wy + word.y2 + RULE_GAP);
+  const wy = top + (accents ? acc.h + ACC_ABOVE : 0) - word.y1;
+
+  // Ink centres of the two accents, mirrored either side of the word's centre.
+  const half = (ACC_GAP + acc.w) / 2;
+  const accY = top - acc.y1;
+  const accent = (dx, color) =>
+    `<div class="acc" style="color:${color};transform:translate(${S / 2 + dx - acc.cx}px,${accY}px)">&#180;</div>`;
+
   const body = `<div class="scaler"><div class="canvas tile"><div class="art">
+  ${accents ? accent(-half, HU) + '\n  ' + accent(half, EN) : ''}
   <div class="word" style="transform:translate(${wx}px,${wy}px)">Sz</div>
-  ${rule ? `<div class="rule" style="top:${ruleTop}px"><i class="hu"></i><i class="en"></i></div>` : ''}
 </div></div></div>`;
   return shell(font, body, `
 .scaler{position:absolute;top:0;left:0;width:${S}px;height:${S}px;
   transform:scale(${size / S});transform-origin:0 0}
 .tile{overflow:hidden;background:${PAPER}}
 .art{position:absolute;inset:0;transform:scale(${pad});transform-origin:50% 50%}
-.word{position:absolute;top:0;left:0;white-space:pre;color:${INK};${WORD_CSS}}
-.rule{position:absolute;left:0;right:0;display:flex;justify-content:center}
-.rule i{display:block;width:${RULE_W}px;height:${RULE_H}px}
-.rule .hu{background:${HU}}
-.rule .en{background:${EN}}`);
+.word,.acc{position:absolute;top:0;left:0;white-space:pre}
+.word{color:${INK};${WORD_CSS}}
+.acc{${ACC_CSS}}`);
 }
 
 /* ---------- build ---------- */
@@ -287,6 +300,7 @@ async function main() {
   fs.mkdirSync(CACHE, { recursive: true });
   const font = await fontData();
   const word = inkBox(font, 'Sz', WORD_CSS);
+  const acc = inkBox(font, '&#180;', ACC_CSS);
 
   const targets = [
     ['apple-touch-icon.png', 180, 1],
@@ -299,7 +313,7 @@ async function main() {
 
   for (const [name, size, pad] of targets) {
     const out = path.join(OUT, name);
-    shoot(iconPage(font, word, size, pad), out, size, size + 140);
+    shoot(iconPage(font, word, acc, size, pad), out, size, size + 140);
     cropSquare(out, size);
     console.log(`${name}  ${size}x${size}`);
   }
