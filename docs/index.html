@@ -427,6 +427,14 @@ function titleFromHref(href){
   t = t.replace(/_/g," ").trim();
   return t || null;
 }
+// The section anchor a wikilink points at (e.g. "kérsz" -> Appendix:Hungarian
+// verbs#indicative_mood). Kept as-is (already URL-safe) so it can be reattached
+// verbatim when we hand a special page off to a new tab.
+function hashFromHref(href){
+  if(!href) return null;
+  const i = href.indexOf("#");
+  return i===-1 ? null : (href.slice(i+1) || null);
+}
 function el(tag,cls,txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
 
 // Non-dictionary Wiktionary namespaces (Category, Appendix, etc.) — these aren't
@@ -437,8 +445,9 @@ function specialNamespace(title){
   const m = SPECIAL_NS_RE.exec((title||"").trim());
   return m ? m[1] : null;
 }
-function openOnWiktionary(title){
-  window.open(`https://en.wiktionary.org/wiki/${encodeURIComponent(title.trim())}`, "_blank", "noopener");
+function openOnWiktionary(title, hash){
+  const url = `https://en.wiktionary.org/wiki/${encodeURIComponent(title.trim())}` + (hash ? "#"+hash : "");
+  window.open(url, "_blank", "noopener");
 }
 // Sets the search box value programmatically (history/drill-down/etc.) and
 // keeps the mobile clear-button's visibility in sync, since a plain .value
@@ -480,9 +489,12 @@ function renderDefinitionHTML(html){
       const tag = ch.tagName.toLowerCase();
       const cls = ch.getAttribute("class")||"";
       if(tag==="a"){
-        const word = titleFromHref(ch.getAttribute("href"));
+        const href = ch.getAttribute("href");
+        const word = titleFromHref(href);
         if(word && (ch.getAttribute("rel")||"").includes("WikiLink")){
           const b = el("button","cd wl",ch.textContent); b.dataset.word = word;
+          const hash = hashFromHref(href);
+          if(hash) b.dataset.hash = hash;
           target.appendChild(b);
         } else { tokenize(ch.textContent, target); }
         return;
@@ -571,12 +583,15 @@ function sanitizeWikiFragment(node){
   const clone = document.importNode(node, true);
   clone.querySelectorAll("style,link,.mw-editsection").forEach(e=>e.remove());
   clone.querySelectorAll("a[href]").forEach(a=>{
-    const word = titleFromHref(a.getAttribute("href"));
+    const href = a.getAttribute("href");
+    const word = titleFromHref(href);
     if(word){
       const btn = document.createElement("button");
       btn.className = "cd wl";
       btn.textContent = a.textContent;
       btn.dataset.word = word;
+      const hash = hashFromHref(href);
+      if(hash) btn.dataset.hash = hash;
       a.replaceWith(btn);
     }
   });
@@ -681,7 +696,7 @@ const App = {
     if(!word) return;
     closeSuggest();
     const ns = specialNamespace(word);
-    if(ns){ openOnWiktionary(word); return; }
+    if(ns){ openOnWiktionary(word, opts.hash); return; }
     setSearchValue(word);
     if(opts.drill) this.stack.push(word); else this.stack = [word];
     this.forceLang = opts.lang || null;
@@ -1161,7 +1176,7 @@ document.getElementById("dirBadge").addEventListener("click", ()=>{
 /* ----------------------------------------------- click-to-define delegation */
 document.getElementById("stage").addEventListener("click",(e)=>{
   const t = e.target.closest(".cd");
-  if(t && t.dataset.word){ App.lookup(t.dataset.word, {drill:true}); }
+  if(t && t.dataset.word){ App.lookup(t.dataset.word, {drill:true, hash:t.dataset.hash}); }
 });
 
 /* keyboard: "/" focuses search */
