@@ -4,8 +4,8 @@ English-Hungarian dictionary powered by Wiktionary with a WordReference-style in
 
 Try it: https://szotar.yammer.me (optionally add `?huen=<word>` or `?enhu=word` to jump straight in)!
 
-Add it to your iOS Home Screen (Share → Add to Home Screen) and it installs as **Szótár**,
-with its own icon and no Safari chrome.
+Add it to your iOS Home Screen (Share → Add to Home Screen) and it installs as **Szótár**
+with its own icon.
 
 ## Icons
 

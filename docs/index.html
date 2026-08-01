@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Szótár — English ↔ Hungarian, on Wiktionary</title>
+<title>Szótár — English ↔ Hungarian Wiktionary</title>
 <link rel="icon" href="favicon.ico" sizes="32x32">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
@@ -89,6 +89,12 @@
   .search-field svg{flex:0 0 auto;color:var(--muted)}
   #q{border:0;outline:0;background:transparent;font-family:var(--serif);font-size:19px;color:var(--ink);width:100%}
   #q::placeholder{color:var(--faint);font-style:italic}
+  .clear-q{display:none;flex:0 0 auto;align-items:center;justify-content:center;
+    background:none;border:0;padding:2px;cursor:pointer;color:var(--faint)}
+  .clear-q:hover{color:var(--accent)}
+  @media(max-width:640px){
+    .clear-q.show{display:inline-flex}
+  }
   .dir-badge{flex:0 0 auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);
     border:1px solid var(--rule);border-radius:2px;padding:3px 6px;white-space:nowrap;
     background:none;cursor:pointer;transition:color .12s,border-color .12s,background .12s}
@@ -110,6 +116,7 @@
   .suggest .term{font-family:var(--serif);font-size:17px}
   .suggest .desc{font-family:var(--sans);font-size:12px;color:var(--muted);margin-left:auto;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+  .suggest .desc-external{color:var(--accent)}
 
   /* ---------- layout ---------- */
   main .wrap{display:grid;grid-template-columns:220px 1fr;gap:40px;padding-top:36px;padding-bottom:80px;align-items:start}
@@ -296,9 +303,12 @@
     <div class="search">
       <div class="search-field">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input id="q" type="text" autocomplete="off" spellcheck="false"
+        <input id="q" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
           placeholder="Keress egy szót…  ·  look up a word…"
           aria-label="Search a word in English or Hungarian">
+        <button type="button" class="clear-q" id="clearQ" aria-label="Clear search" title="Clear search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
         <button type="button" class="dir-badge" id="dirBadge">EN ↔ HU</button>
       </div>
       <div class="suggest" id="suggest" role="listbox"></div>
@@ -326,8 +336,8 @@
 
 <footer>
   <div class="wrap">
-    <span>Data from <a href="https://en.wiktionary.org" target="_blank" rel="noopener">English Wiktionary</a> · CC BY-SA. Not affiliated with Wikimedia.</span>
-    <span>Click any word in a result to look it up in the other language.</span>
+    <span>Data from <a href="https://wiktionary.org" target="_blank" rel="noopener">Wiktionary</a> · CC BY-SA. Not affiliated with Wikimedia.</span>
+    <span>Built by <a href="https://github.com/iamtheyammer" target="_blank" rel="noopener">iamtheyammer</a>. <a href="https://github.com/iamtheyammer/szotar" target="_blank" rel="noopener">Contribute</a> on GitHub.</span>
   </div>
 </footer>
 
@@ -418,6 +428,26 @@ function titleFromHref(href){
   return t || null;
 }
 function el(tag,cls,txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+// Non-dictionary Wiktionary namespaces (Category, Appendix, etc.) — these aren't
+// words with definitions, so we never try to render them inline; we hand off to
+// the real site instead.
+const SPECIAL_NS_RE = /^(Category|Appendix|Wiktionary|Thesaurus|Index|Reconstruction|Rhymes|Citations|Concordance|Talk|User|Template|Module|Help|Special|MediaWiki|File)\s*:/i;
+function specialNamespace(title){
+  const m = SPECIAL_NS_RE.exec((title||"").trim());
+  return m ? m[1] : null;
+}
+function openOnWiktionary(title){
+  window.open(`https://en.wiktionary.org/wiki/${encodeURIComponent(title.trim())}`, "_blank", "noopener");
+}
+// Sets the search box value programmatically (history/drill-down/etc.) and
+// keeps the mobile clear-button's visibility in sync, since a plain .value
+// assignment doesn't fire an "input" event.
+function setSearchValue(v){
+  document.getElementById("q").value = v;
+  const btn = document.getElementById("clearQ");
+  if(btn) btn.classList.toggle("show", v.length>0);
+}
 
 // Turn a plain-text run into individually clickable word tokens.
 function tokenize(text, into){
@@ -638,10 +668,11 @@ const App = {
 
   home(){
     this.stack = [];
-    document.getElementById("q").value = "";
+    setSearchValue("");
     setAccent("hu");
     renderHero();
     closeSuggest();
+    history.replaceState(null, "", location.pathname + location.hash);
   },
 
   async lookup(word, opts){
@@ -649,7 +680,9 @@ const App = {
     word = (word||"").trim();
     if(!word) return;
     closeSuggest();
-    document.getElementById("q").value = word;
+    const ns = specialNamespace(word);
+    if(ns){ openOnWiktionary(word); return; }
+    setSearchValue(word);
     if(opts.drill) this.stack.push(word); else this.stack = [word];
     this.forceLang = opts.lang || null;
 
@@ -680,13 +713,15 @@ const App = {
     // Re-point the UI at the headword we actually found.
     const fellBack = resolved !== word;
     if(fellBack){
-      document.getElementById("q").value = resolved;
+      setSearchValue(resolved);
       if(this.stack.length) this.stack[this.stack.length-1] = resolved;
     }
 
     const parsed = parseWikitext(hit.wt);
     const extras = parseRenderedExtras(hit.rhtml);
-    pushHist(resolved, chooseLang(hit.def));
+    const lang = chooseLang(hit.def);
+    pushHist(resolved, lang);
+    updateURL(resolved, lang);
     renderEntry(resolved, hit.def, parsed, extras, fellBack ? word : null);
   }
 };
@@ -703,6 +738,14 @@ function chooseLang(def){
     return HU_DIACRITICS.test(w) ? "hu" : "en";
   }
   return langs[0];
+}
+
+// Keep the URL in sync with the current entry (query param only, no new
+// history entries) so a reload — or sharing the link — lands back here.
+function updateURL(word, lang){
+  const params = new URLSearchParams();
+  params.set(lang==="hu" ? "huen" : "enhu", word);
+  history.replaceState(null, "", location.pathname + "?" + params + location.hash);
 }
 
 function setAccent(lang){
@@ -729,6 +772,8 @@ function renderDirBadge(){
   const field = document.querySelector(".search-field");
   field.classList.toggle("dir-hu", App.dir==="hu");
   field.classList.toggle("dir-en", App.dir==="en");
+  // Hints mobile on-screen keyboards (notably Android/Gboard) to switch layout.
+  document.getElementById("q").lang = App.dir==="hu" ? "hu" : "en";
 }
 
 /* ------------------------------------------------------------- render: hero */
@@ -739,10 +784,10 @@ function renderHero(){
   s.innerHTML = "";
   const hero = el("div","hero");
   const lede = el("div","lede");
-  lede.innerHTML = 'A clean window into <span class="hu">Magyar</span> &amp; <span class="en">English</span>, built on Wiktionary.';
-  const p = el("p", null, "Type a word in either language. Hungarian entries show their English meaning; English entries show their Hungarian equivalents. Click any word in a result to chase it into the other language.");
+  lede.innerHTML = 'A cleaner <span class="en">English</span> &amp; <span class="hu">Magyar</span> interface for Wiktionary.';
+  const p = el("p", null, "Type a word in either language. Hungarian entries show their English meaning; English entries show their Hungarian equivalents. Not all words are available. All data comes from Wiktionary, CC-BY-SA.");
   const seeds = el("div","seeds");
-  ["pályaudvar","jönni","viszontlátásra","station","house","beautiful"].forEach(w=>{
+  ["pályaudvar","jönni","viszontlátásra","station","home","open"].forEach(w=>{
     const b = el("button",null,w); b.onclick=()=>App.lookup(w); seeds.appendChild(b);
   });
   hero.append(lede,p,seeds); s.appendChild(hero);
@@ -865,6 +910,7 @@ function renderEntry(word, def, parsed, extras, fallbackFrom){
       const on = btn.textContent===(l==="hu"?"Magyar":"English");
       btn.className = on?("on "+l):"";
     });
+    updateURL(word, l);
   }
 
   s.appendChild(card);
@@ -887,6 +933,14 @@ function renderLangBlocks(mount, blocks, lang, parsed, extra){
       g.appendChild(chips); det.appendChild(g);
     });
     mount.appendChild(det);
+  }
+
+  if(lang==="en" && !(parsed.trans && parsed.trans.length)){
+    mount.appendChild(el("div","case-note","No Hungarian translation found for this word."));
+  }
+  const anySense = blocks.some(b=>(b.definitions||[]).some(d=>d.definition && d.definition.trim()));
+  if(lang==="hu" && !anySense){
+    mount.appendChild(el("div","case-note","No English translation found for this word."));
   }
 
   blocks.forEach(b=>{
@@ -1047,10 +1101,12 @@ function renderFavorites(){
 /* --------------------------------------------------------------- search box */
 const qInput = document.getElementById("q");
 const suggestBox = document.getElementById("suggest");
+const clearQBtn = document.getElementById("clearQ");
 let sugTimer=null, sugItems=[], sugActive=-1;
 
 qInput.addEventListener("input", ()=>{
   const v = qInput.value.trim();
+  clearQBtn.classList.toggle("show", qInput.value.length>0);
   clearTimeout(sugTimer);
   if(v.length<1){ closeSuggest(); return; }
   sugTimer = setTimeout(async ()=>{
@@ -1060,13 +1116,21 @@ qInput.addEventListener("input", ()=>{
     }catch(e){ closeSuggest(); }
   }, 130);
 });
+clearQBtn.addEventListener("click", ()=>{
+  qInput.value = "";
+  clearQBtn.classList.remove("show");
+  closeSuggest();
+  qInput.focus();
+});
 function paintSuggest(){
   if(!sugItems.length){ closeSuggest(); return; }
   suggestBox.innerHTML="";
   sugItems.forEach((it,i)=>{
     const b = el("button");
+    const ns = specialNamespace(it.title);
     b.appendChild(el("span","term", it.title));
-    b.appendChild(el("span","desc", HU_DIACRITICS.test(it.title)?"Hungarian?":""));
+    b.appendChild(el("span", "desc"+(ns?" desc-external":""),
+      ns ? ns+" ↗ opens on Wiktionary" : (HU_DIACRITICS.test(it.title)?"Hungarian?":"")));
     if(i===sugActive) b.classList.add("active");
     b.onmousedown=(e)=>{ e.preventDefault(); App.lookup(it.title, App.dir!=="auto"?{lang:App.dir}:undefined); };
     suggestBox.appendChild(b);
